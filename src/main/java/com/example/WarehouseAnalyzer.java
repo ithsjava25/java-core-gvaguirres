@@ -149,19 +149,40 @@ class WarehouseAnalyzer {
         List<Product> products = warehouse.getProducts();
         int n = products.size();
         if (n == 0) return List.of();
-        double sum = products.stream().map(Product::price).mapToDouble(bd -> bd.doubleValue()).sum();
-        double mean = sum / n;
-        double variance = products.stream()
-                .map(Product::price)
-                .mapToDouble(bd -> Math.pow(bd.doubleValue() - mean, 2))
-                .sum() / n;
-        double std = Math.sqrt(variance);
-        double threshold = standardDeviations * std;
-        List<Product> outliers = new ArrayList<>();
-        for (Product p : products) {
-            double diff = Math.abs(p.price().doubleValue() - mean);
-            if (diff > threshold) outliers.add(p);
+
+        //Calculating the MEDIAN price
+        var sortedPrices = products.stream()
+                    .map(p -> p.price().doubleValue())
+                    .sorted()
+                    .toList();
+
+        //Is the list even or uneven?
+        double median;
+        if (n % 2 == 0) {
+            median = ( sortedPrices.get(n/2 - 1) + sortedPrices.get(n/2) ) / 2;
+        } else {
+            median = ( sortedPrices.get(n/2) );
         }
+
+        //Calcute absolute deviation instead of use standard deviation
+        var absoluteDeviation = sortedPrices.stream()
+                .map(price -> Math.abs( price - median) )
+                .sorted()
+                .toList();
+
+        //Calcule the median of the absolute deviation
+        double mad;
+        if ( n % 2 == 0){
+            mad = ( absoluteDeviation.get(n/2 - 1) + absoluteDeviation.get(n/2)) / 2;
+        } else {
+            mad = ( absoluteDeviation.get(n/2) );
+        }
+
+        //Filter of the outliers
+       List<Product> outliers = products.stream()
+                .filter(product -> Math.abs(product.price().doubleValue() - median) > standardDeviations * mad )
+                .toList();
+
         return outliers;
     }
     
