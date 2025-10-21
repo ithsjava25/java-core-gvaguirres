@@ -1,7 +1,9 @@
 package com.example;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Category{
     private final String name;
@@ -22,8 +24,9 @@ public class Category{
     }
 
     private static String formatName(String name){
-            name = name.trim().toLowerCase();
-            return name.substring(0,1).toUpperCase() + name.substring(1);
+        return Arrays.stream(name.split("\\s+"))
+                .map(word -> word.substring(0,1).toUpperCase() + word.substring(1).toLowerCase())
+                .collect(Collectors.joining());
     }
 
     public String getName() {
@@ -34,6 +37,7 @@ public class Category{
     public String toString() {
         return "Category{name='" + name + "'}";
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

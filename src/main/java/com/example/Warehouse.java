@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 public class Warehouse {
     private List<Product> warehouseProduct;
     private static final Map<String, Warehouse> instances = new HashMap<>();
+    private Set<UUID> changedProducts = new HashSet<>();
 
     public Warehouse(String name) {
         this.warehouseProduct = new ArrayList<>();
@@ -31,6 +32,7 @@ public class Warehouse {
                 .filter(product -> product.uuid().equals(id))
                 .findFirst();
     }
+
     public void updateProductPrice(UUID id, BigDecimal price) {
 
         Optional <Product> optionalProduct = getProductById(id);
@@ -38,8 +40,9 @@ public class Warehouse {
             throw new  NoSuchElementException("Product not found with id:");
 
         optionalProduct.get().setPrice(price);
-
+        changedProducts.add(id);
     }
+
     public List<Perishable> expiredProducts(){
         return warehouseProduct.stream()
                 .filter(product -> product instanceof Perishable)
@@ -68,6 +71,9 @@ public class Warehouse {
 
     public Map<String, Warehouse> getProductsGroupedByCategories() {
         return Map.of();
+    }
+    public Set<UUID> getChangedProducts() {
+        return Set.copyOf(changedProducts);
     }
 
 }
