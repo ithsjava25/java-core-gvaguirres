@@ -153,35 +153,35 @@ class WarehouseAnalyzer {
 
         //Calculating the MEDIAN price
         var sortedPrices = products.stream()
-                    .map(p -> p.price().doubleValue())
+                    .map(Product::price)
                     .sorted()
                     .toList();
 
         //Is the list even or uneven?
-        double median;
+        BigDecimal median;
         if (n % 2 == 0) {
-            median = ( sortedPrices.get(n/2 - 1) + sortedPrices.get(n/2) ) / 2;
+            median = ( sortedPrices.get(n/2 - 1).add(sortedPrices.get(n/2) ).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP));
         } else {
             median = ( sortedPrices.get(n/2) );
         }
 
         //Calcute absolute deviation instead of use standard deviation
         var absoluteDeviation = sortedPrices.stream()
-                .map(price -> Math.abs( price - median) )
+                .map(price -> (price.subtract(median).abs()))
                 .sorted()
                 .toList();
 
         //Calcule the median of the absolute deviation
-        double mad;
+        BigDecimal mad;
         if ( n % 2 == 0){
-            mad = ( absoluteDeviation.get(n/2 - 1) + absoluteDeviation.get(n/2)) / 2;
+            mad = absoluteDeviation.get(n/2 - 1).add(absoluteDeviation.get(n/2)).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP);
         } else {
             mad = ( absoluteDeviation.get(n/2) );
         }
 
         //Filter of the outliers
        List<Product> outliers = products.stream()
-                .filter(product -> Math.abs(product.price().doubleValue() - median) > deviationFactor * mad )
+                .filter(product -> (product.price().subtract(median).abs()).compareTo(BigDecimal.valueOf(deviationFactor).multiply(mad)) > 0)
                 .toList();
 
         return outliers;

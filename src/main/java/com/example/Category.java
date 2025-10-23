@@ -26,7 +26,7 @@ public class Category{
     private static String formatName(String name){
         return Arrays.stream(name.split("\\s+"))
                 .map(word -> word.substring(0,1).toUpperCase() + word.substring(1).toLowerCase())
-                .collect(Collectors.joining());
+                .collect(Collectors.joining(" "));
     }
 
     public String getName() {

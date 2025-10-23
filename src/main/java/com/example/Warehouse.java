@@ -37,7 +37,7 @@ public class Warehouse {
 
         Optional <Product> optionalProduct = getProductById(id);
         if ( optionalProduct.isEmpty() || id == null )
-            throw new  NoSuchElementException("Product not found with id:");
+            throw new  NoSuchElementException("Product not found with id: " + id);
 
         optionalProduct.get().setPrice(price);
         changedProducts.add(id);
