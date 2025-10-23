@@ -138,30 +138,52 @@ class WarehouseAnalyzer {
     }
     
     /**
-     * Identifies products whose price deviates from the mean by more than the specified
-     * number of standard deviations. Uses population standard deviation over all products.
+     * Identifies products whose price deviates from the median by more than a specified
+     * multiple of the Median Absolute Deviation (MAD).
+     * This method uses the MAD as a robust measure of data dispersion to detect price outliers.
      * Test expectation: with a mostly tight cluster and two extremes, calling with 2.0 returns the two extremes.
      *
-     * @param standardDeviations threshold in standard deviations (e.g., 2.0)
+     * @param deviationFactor The factor (k) by which the calculated MAD is multiplied to set the outlier threshold (e.g., 2.0 or 3.0).
      * @return list of products considered outliers
      */
-    public List<Product> findPriceOutliers(double standardDeviations) {
+    public List<Product> findPriceOutliers(double deviationFactor) {
         List<Product> products = warehouse.getProducts();
         int n = products.size();
         if (n == 0) return List.of();
-        double sum = products.stream().map(Product::price).mapToDouble(bd -> bd.doubleValue()).sum();
-        double mean = sum / n;
-        double variance = products.stream()
-                .map(Product::price)
-                .mapToDouble(bd -> Math.pow(bd.doubleValue() - mean, 2))
-                .sum() / n;
-        double std = Math.sqrt(variance);
-        double threshold = standardDeviations * std;
-        List<Product> outliers = new ArrayList<>();
-        for (Product p : products) {
-            double diff = Math.abs(p.price().doubleValue() - mean);
-            if (diff > threshold) outliers.add(p);
+
+        //Calculating the MEDIAN price
+        var sortedPrices = products.stream()
+                    .map(Product::price)
+                    .sorted()
+                    .toList();
+
+        //Is the list even or uneven?
+        BigDecimal median;
+        if (n % 2 == 0) {
+            median = ( sortedPrices.get(n/2 - 1).add(sortedPrices.get(n/2) ).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP));
+        } else {
+            median = ( sortedPrices.get(n/2) );
         }
+
+        //Calcute absolute deviation instead of use standard deviation
+        var absoluteDeviation = sortedPrices.stream()
+                .map(price -> (price.subtract(median).abs()))
+                .sorted()
+                .toList();
+
+        //Calcule the median of the absolute deviation
+        BigDecimal mad;
+        if ( n % 2 == 0){
+            mad = absoluteDeviation.get(n/2 - 1).add(absoluteDeviation.get(n/2)).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP);
+        } else {
+            mad = ( absoluteDeviation.get(n/2) );
+        }
+
+        //Filter of the outliers
+       List<Product> outliers = products.stream()
+                .filter(product -> (product.price().subtract(median).abs()).compareTo(BigDecimal.valueOf(deviationFactor).multiply(mad)) > 0)
+                .toList();
+
         return outliers;
     }
     
