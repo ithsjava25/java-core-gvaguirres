@@ -5,11 +5,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Warehouse {
-    private List<Product> warehouseProduct;
+    private final List<Product> warehouseProduct;
     private static final Map<String, Warehouse> instances = new HashMap<>();
-    private Set<UUID> changedProducts = new HashSet<>();
+    private final Set<UUID> changedProducts = new HashSet<>();
 
-    public Warehouse(String name) {
+    private Warehouse(String name) {
         this.warehouseProduct = new ArrayList<>();
     }
 
@@ -18,6 +18,9 @@ public class Warehouse {
             throw new IllegalArgumentException("Name cannot be null or empty");
         return instances.computeIfAbsent(name, Warehouse::new);
     }
+    public static Warehouse getInstance() {
+        return Warehouse.getInstance("DefaultWarehouse");
+    }
 
     public List<Product> getProducts() {
         return List.copyOf(warehouseProduct);
@@ -25,14 +28,22 @@ public class Warehouse {
     public void addProduct(Product product) {
         if ( product == null )
             throw new IllegalArgumentException("Product cannot be null.");
+
+        UUID productId = product.uuid();
+        boolean idExists = warehouseProduct.stream()
+                .anyMatch(p -> p.uuid().equals(productId));
+        if (idExists) {
+            throw new IllegalArgumentException("Product with that id already exists, use updateProduct for updates.");
+        }
+
         warehouseProduct.add(product);
+
     }
     public Optional<Product> getProductById(UUID id) {
         return warehouseProduct.stream()
                 .filter(product -> product.uuid().equals(id))
                 .findFirst();
     }
-
     public void updateProductPrice(UUID id, BigDecimal price) {
 
         Optional <Product> optionalProduct = getProductById(id);
@@ -57,8 +68,7 @@ public class Warehouse {
                 .collect(Collectors.toList());
     }
     public void remove(UUID id) {
-        if (warehouseProduct != null)
-            warehouseProduct.removeIf(product -> product.uuid() != null && product.uuid().equals(id));
+        warehouseProduct.removeIf(product -> product.uuid() != null && product.uuid().equals(id));
     }
 
     public boolean isEmpty() {
@@ -69,8 +79,9 @@ public class Warehouse {
         warehouseProduct.clear();
     }
 
-    public Map<String, Warehouse> getProductsGroupedByCategories() {
-        return Map.of();
+    public Map<Category, List<Product>> getProductsGroupedByCategories() {
+        return warehouseProduct.stream()
+                .collect(Collectors.groupingBy(Product::category));
     }
     public Set<UUID> getChangedProducts() {
         return Set.copyOf(changedProducts);
