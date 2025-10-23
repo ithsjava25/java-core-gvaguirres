@@ -138,14 +138,15 @@ class WarehouseAnalyzer {
     }
     
     /**
-     * Identifies products whose price deviates from the mean by more than the specified
-     * number of standard deviations. Uses population standard deviation over all products.
+     * Identifies products whose price deviates from the median by more than a specified
+     * multiple of the Median Absolute Deviation (MAD).
+     * This method uses the MAD as a robust measure of data dispersion to detect price outliers.
      * Test expectation: with a mostly tight cluster and two extremes, calling with 2.0 returns the two extremes.
      *
-     * @param standardDeviations threshold in standard deviations (e.g., 2.0)
+     * @param deviationFactor The factor (k) by which the calculated MAD is multiplied to set the outlier threshold (e.g., 2.0 or 3.0).
      * @return list of products considered outliers
      */
-    public List<Product> findPriceOutliers(double standardDeviations) {
+    public List<Product> findPriceOutliers(double deviationFactor) {
         List<Product> products = warehouse.getProducts();
         int n = products.size();
         if (n == 0) return List.of();
@@ -180,7 +181,7 @@ class WarehouseAnalyzer {
 
         //Filter of the outliers
        List<Product> outliers = products.stream()
-                .filter(product -> Math.abs(product.price().doubleValue() - median) > standardDeviations * mad )
+                .filter(product -> Math.abs(product.price().doubleValue() - median) > deviationFactor * mad )
                 .toList();
 
         return outliers;
